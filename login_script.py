@@ -2,7 +2,7 @@ import json
 import asyncio
 from pyppeteer import launch
 from pyppeteer.errors import TimeoutError
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import aiofiles
 import random
 import requests
@@ -91,15 +91,19 @@ async def main():
 
         is_logged_in = await login(page, username, password)
 
+        # 打码用户名
+        masked_username = username[:3] + "***"
+
         if is_logged_in:
-            now_utc = format_to_iso(datetime.utcnow())
-            now_beijing = format_to_iso(datetime.utcnow() + timedelta(hours=8))
-            success_message = f'bincloud账号 {username} 于北京时间 {now_beijing}（UTC时间 {now_utc}）登录成功！'
+            # 获取带时区的当前时间
+            now_utc = format_to_iso(datetime.now(timezone.utc))
+            now_beijing = format_to_iso(datetime.now().astimezone(timezone(timedelta(hours=8))))
+            success_message = f'bincloud账号 {masked_username} 于北京时间 {now_beijing}（UTC时间 {now_utc}）登录成功！'
             message += success_message + '\n'
             print(success_message)
         else:
-            message += f'bincloud账号 {username} 登录失败，请检查账号和密码是否正确。\n'
-            print(f'bincloud账号 {username} 登录失败，请检查账号和密码是否正确。')
+            message += f'bincloud账号 {masked_username} 登录失败，请检查账号和密码是否正确。\n'
+            print(f'bincloud账号 {masked_username} 登录失败，请检查账号和密码是否正确。')
 
         delay = random.randint(1000, 8000)
         await delay_time(delay)
