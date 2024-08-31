@@ -47,11 +47,15 @@ async def login(page, username, password):
         # 等待导航或检查登录成功
         await page.waitForNavigation(timeout=15000)
 
-        # 检查登录状态
+        # 检查登录状态并查找注销按钮
         is_logged_in = await page.evaluate('''() => {
-            const logoutButton = document.querySelector('a[href="/logout.php"]');
+            const logoutButton = document.getElementById('Secondary_Navbar-Account-Logout');
             return logoutButton !== null;
         }''')
+
+        # 如果找到注销按钮，则点击它
+        if is_logged_in:
+            await page.click('#Secondary_Navbar-Account-Logout')
 
         return is_logged_in
 
