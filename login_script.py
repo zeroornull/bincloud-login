@@ -11,37 +11,41 @@ import os
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
+
 def format_to_iso(date):
     return date.strftime('%Y-%m-%d %H:%M:%S')
 
+
 async def delay_time(ms):
     await asyncio.sleep(ms / 1000)
+
 
 # 全局浏览器实例
 browser = None
 
 # telegram消息
-message = 'serv00&ct8自动化脚本运行\n'
+message = 'bincloud自动化脚本运行\n'
 
-async def login(username, password, panel):
+
+async def login(username, password):
     global browser
 
     page = None  # 确保 page 在任何情况下都被定义
-    serviceName = 'ct8' if 'ct8' in panel else 'serv00'
+    serviceName = 'bincloud'
     try:
         if not browser:
             browser = await launch(headless=True, args=['--no-sandbox', '--disable-setuid-sandbox'])
 
         page = await browser.newPage()
-        url = f'https://{panel}/login/?next=/'
+        url = 'https://www.bincloud.top/index.php?rp=/login'
         await page.goto(url)
 
-        username_input = await page.querySelector('#id_username')
+        username_input = await page.querySelector('#inputEmail')
         if username_input:
             await page.evaluate('''(input) => input.value = ""''', username_input)
 
-        await page.type('#id_username', username)
-        await page.type('#id_password', password)
+        await page.type('#inputEmail', username)
+        await page.type('#inputPassword', password)
 
         login_button = await page.querySelector('#submit')
         if login_button:
@@ -66,9 +70,10 @@ async def login(username, password, panel):
         if page:
             await page.close()
 
+
 async def main():
     global message
-    message = 'serv00&ct8自动化脚本运行\n'
+    message = 'bincloud 自动化脚本运行\n'
 
     try:
         async with aiofiles.open('accounts.json', mode='r', encoding='utf-8') as f:
@@ -81,27 +86,26 @@ async def main():
     for account in accounts:
         username = account['username']
         password = account['password']
-        panel = account['panel']
 
-        serviceName = 'ct8' if 'ct8' in panel else 'serv00'
-        is_logged_in = await login(username, password, panel)
+        is_logged_in = await login(username, password)
 
         if is_logged_in:
             now_utc = format_to_iso(datetime.utcnow())
             now_beijing = format_to_iso(datetime.utcnow() + timedelta(hours=8))
-            success_message = f'{serviceName}账号 {username} 于北京时间 {now_beijing}（UTC时间 {now_utc}）登录成功！'
+            success_message = f'bincloud账号 {username} 于北京时间 {now_beijing}（UTC时间 {now_utc}）登录成功！'
             message += success_message + '\n'
             print(success_message)
         else:
-            message += f'{serviceName}账号 {username} 登录失败，请检查{serviceName}账号和密码是否正确。\n'
-            print(f'{serviceName}账号 {username} 登录失败，请检查{serviceName}账号和密码是否正确。')
+            message += f'bincloud账号 {username} 登录失败，请检查账号和密码是否正确。\n'
+            print(f'bincloud账号 {username} 登录失败，请检查账号和密码是否正确。')
 
         delay = random.randint(1000, 8000)
         await delay_time(delay)
-        
-    message += f'所有{serviceName}账号登录完成！'
+
+    message += '所有bincloud账号登录完成！'
     await send_telegram_message(message)
-    print(f'所有{serviceName}账号登录完成！')
+    print('所有bincloud账号登录完成！')
+
 
 async def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -128,6 +132,7 @@ async def send_telegram_message(message):
             print(f"发送消息到Telegram失败: {response.text}")
     except Exception as e:
         print(f"发送消息到Telegram时出错: {e}")
+
 
 if __name__ == '__main__':
     asyncio.run(main())
