@@ -47,7 +47,7 @@ async def login(username, password):
         await page.type('#inputEmail', username)
         await page.type('#inputPassword', password)
 
-        login_button = await page.querySelector('#submit')
+        login_button = await page.querySelector('#login')
         if login_button:
             await login_button.click()
         else:
