@@ -1,13 +1,12 @@
 name: Run Login Script
 
 on:
-  workflow_dispatch:  # 手动触发
+  workflow_dispatch:
   schedule:
     - cron: "0 0 */3 * *"  # 每三天运行一次，可以根据需求调整时间
   push:
     branches:
-      - main  # 当代码推送到 main 分支时触发
-
+      - main
 jobs:
   login:
     runs-on: ubuntu-latest
@@ -22,7 +21,9 @@ jobs:
           python-version: '3.x'  # 设置你希望使用的 Python 版本，建议使用稳定版本
 
       - name: Create accounts.json from environment variable
-        run: echo "${{ secrets.ACCOUNTS_JSON }}" > accounts.json  # 使用 GitHub Secrets 的直接引用
+        run: echo "$ACCOUNTS_JSON" > accounts.json
+        env:
+            ACCOUNTS_JSON: ${{ secrets.ACCOUNTS_JSON }}  # 从GitHub Secrets中获取环境变量
 
       - name: 安装依赖
         run: |
@@ -34,5 +35,6 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ACCOUNTS_JSON: ${{ secrets.ACCOUNTS_JSON }}
         run: |
           python login_script.py
