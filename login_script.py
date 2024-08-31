@@ -79,8 +79,9 @@ async def main():
         async with aiofiles.open('accounts.json', mode='r', encoding='utf-8') as f:
             accounts_json = await f.read()
         accounts = json.loads(accounts_json)
-    except Exception as e:
+    except json.JSONDecodeError as e:
         print(f'读取 accounts.json 文件时出错: {e}')
+        await browser.close()
         return
 
     # 登录所有账号
@@ -103,7 +104,7 @@ async def main():
             print(success_message)
         else:
             message += f'bincloud账号 {username} 登录失败，请检查账号和密码是否正确。\n'
-            print(f'bincloud账号 {username} 登录失败，请检查账号和密码是否正确。')
+            print(f'bincloud账号 {masked_username} 登录失败，请检查账号和密码是否正确。')
 
         delay = random.randint(1000, 8000)
         await delay_time(delay)
@@ -113,7 +114,7 @@ async def main():
     await send_telegram_message(message)
     print('所有bincloud账号登录完成！')
 
-    # 关闭浏览器实例
+    # 确保正确关闭浏览器
     await browser.close()
 
 
