@@ -55,8 +55,9 @@ async def login(username, password):
 
         await page.waitForNavigation()
 
+        # 修改后的检查登录成功条件
         is_logged_in = await page.evaluate('''() => {
-            const logoutButton = document.querySelector('a[href="/logout/"]');
+            const logoutButton = document.querySelector('a[href="/logout.php"]');
             return logoutButton !== null;
         }''')
 
