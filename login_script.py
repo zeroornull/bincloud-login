@@ -1,6 +1,7 @@
 import json
 import asyncio
 from pyppeteer import launch
+from pyppeteer.errors import TimeoutError
 from datetime import datetime, timedelta
 import aiofiles
 import random
@@ -13,36 +14,26 @@ TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 
 def format_to_iso(date):
+    """格式化日期为 ISO 格式"""
     return date.strftime('%Y-%m-%d %H:%M:%S')
 
 
 async def delay_time(ms):
+    """延迟函数"""
     await asyncio.sleep(ms / 1000)
 
 
-# 全局浏览器实例
-browser = None
-
-# telegram消息
-message = 'bincloud自动化脚本运行\n'
-
-
-async def login(username, password):
-    global browser
-
-    page = None  # 确保 page 在任何情况下都被定义
+async def login(page, username, password):
+    """执行登录操作"""
     serviceName = 'bincloud'
     try:
-        if not browser:
-            browser = await launch(headless=True, args=['--no-sandbox', '--disable-setuid-sandbox'])
-
-        page = await browser.newPage()
         url = 'https://www.bincloud.top/index.php?rp=/login'
         await page.goto(url)
 
-        username_input = await page.querySelector('#inputEmail')
-        if username_input:
-            await page.evaluate('''(input) => input.value = ""''', username_input)
+        # 等待输入框和按钮加载完成
+        await page.waitForSelector('#inputEmail', timeout=10000)
+        await page.waitForSelector('#inputPassword', timeout=10000)
+        await page.waitForSelector('#login', timeout=10000)
 
         await page.type('#inputEmail', username)
         await page.type('#inputPassword', password)
@@ -53,9 +44,10 @@ async def login(username, password):
         else:
             raise Exception('无法找到登录按钮')
 
-        await page.waitForNavigation()
+        # 等待导航或检查登录成功
+        await page.waitForNavigation(timeout=15000)
 
-        # 修改后的检查登录成功条件
+        # 检查登录状态
         is_logged_in = await page.evaluate('''() => {
             const logoutButton = document.querySelector('a[href="/logout.php"]');
             return logoutButton !== null;
@@ -63,20 +55,23 @@ async def login(username, password):
 
         return is_logged_in
 
+    except TimeoutError as e:
+        print(f'{serviceName}账号 {username} 登录时超时: {e}')
+        return False
     except Exception as e:
         print(f'{serviceName}账号 {username} 登录时出现错误: {e}')
         return False
-
-    finally:
-        if page:
-            await page.close()
 
 
 async def main():
     global message
     message = 'bincloud 自动化脚本运行\n'
 
+    # 创建浏览器实例
+    browser = await launch(headless=True, args=['--no-sandbox', '--disable-setuid-sandbox'])
+
     try:
+        # 读取账号信息
         async with aiofiles.open('accounts.json', mode='r', encoding='utf-8') as f:
             accounts_json = await f.read()
         accounts = json.loads(accounts_json)
@@ -84,11 +79,13 @@ async def main():
         print(f'读取 accounts.json 文件时出错: {e}')
         return
 
+    # 登录所有账号
     for account in accounts:
+        page = await browser.newPage()
         username = account['username']
         password = account['password']
 
-        is_logged_in = await login(username, password)
+        is_logged_in = await login(page, username, password)
 
         if is_logged_in:
             now_utc = format_to_iso(datetime.utcnow())
@@ -102,27 +99,22 @@ async def main():
 
         delay = random.randint(1000, 8000)
         await delay_time(delay)
+        await page.close()
 
     message += '所有bincloud账号登录完成！'
     await send_telegram_message(message)
     print('所有bincloud账号登录完成！')
 
+    # 关闭浏览器实例
+    await browser.close()
+
 
 async def send_telegram_message(message):
+    """发送消息到 Telegram"""
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
         'chat_id': TELEGRAM_CHAT_ID,
-        'text': message,
-        'reply_markup': {
-            'inline_keyboard': [
-                [
-                    {
-                        'text': '问题反馈❓',
-                        'url': 'https://t.me/yxjsjl'
-                    }
-                ]
-            ]
-        }
+        'text': message
     }
     headers = {
         'Content-Type': 'application/json'
