@@ -60,12 +60,11 @@
     - 示例值:
       ```json
       [
-            {"username": "serv00的账号", "password": "serv00的密码", "panel": "panel6.serv00.com"},
-            {"username": "ct8的账号", "password": "ct8的密码", "panel": "panel.ct8.pl"},
-            {"username": "user2", "password": "password2", "panel": "panel6.serv00.com"}
+            {"username": "bincloud.top的账号", "password": "bincloud.top的密码"},
+            {"username": "bincloud.top的账号2", "password": "bincloud.top的密码2"}
           ]
       ```
-    - 获取方法: 创建一个包含serv00账号信息的 JSON 文件，并将其内容添加到 GitHub 仓库的 Secrets 中。
+    - 获取方法: 创建一个包含bincloud.top账号信息的 JSON 文件，并将其内容添加到 GitHub 仓库的 Secrets 中。
 
 ### 注意事项
 
